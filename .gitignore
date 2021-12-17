@@ -2,6 +2,8 @@
 *.npy
 *.npz
 .h5
+*.tsv
+*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

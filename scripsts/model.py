@@ -1,8 +1,10 @@
-from numpy.lib.function_base import average
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 import lightgbm as lgb
 from sklearn.model_selection import StratifiedKFold
+from catboost import Pool
+from catboost import CatBoostClassifier
+import numpy as np
 
 class Models:
     def __init__(self) -> None:
@@ -19,9 +21,11 @@ class Models:
             y_val = y_train[valid_index]
 
             if model_name == "random_forest":
-                score, _, _ = self.light_gbm(X_tr, y_tr, X_val, y_val)
+                score, _, _ = self.random_forest(X_tr, y_tr, X_val, y_val)
             elif model_name == "light_gbm":
                 score, _, _ = self.light_gbm(X_tr, y_tr, X_val, y_val, categorical_features)
+            elif model_name == "catboost":
+                score, _, _ = self.catboost(X_tr, y_tr, X_val, y_val, categorical_features)
             else:
                 raise NameError("指定されたアルゴリズムは存在しません")
 
@@ -30,7 +34,7 @@ class Models:
         cv_score = sum(scores) / len(scores)
         return cv_score
 
-    def random_forest(self, X_train, y_train, X_valid, y_valid, X_test=None, n_estimators=15, max_depth=6, random_state=0):
+    def random_forest(self, X_train, y_train, X_valid, y_valid, X_test=None, n_estimators=67, max_depth=6, random_state=0):
         """
         pandasでの教師データ
         パラメータ
@@ -65,5 +69,28 @@ class Models:
         score = accuracy_score(y_valid, y_val_pre)
 
         y_pred = li_gbm.predict(X_test, num_iteration=li_gbm.best_iteration) if not X_test==None else None
+
+        return score, y_val_pre, y_pred
+
+    def catboost(self, X_train, y_train, X_valid, y_valid, categorical_features, X_test=None, params ={'depth' : 3,'learning_rate' : 0.054,'early_stopping_rounds' : 9,'iterations' : 474, 'custom_loss' :['Accuracy'], 'random_seed' :0}):
+        """
+        pandasでの教師データ
+        categorical_features:カテゴリかる属性のカラム名を示したリスト
+        パラメータ
+        return valスコア(float), y_val_pre(valでの予測値), その取り出し方での予測値
+        """
+
+        train = Pool(X_train, y_train, cat_features=categorical_features)
+        eval = Pool(X_valid, y_valid, cat_features=categorical_features)
+
+        model = CatBoostClassifier(custom_loss=['Accuracy'],random_seed=0)
+        model = CatBoostClassifier(**params)
+        cab = model.fit(train, eval_set=eval)
+        
+        y_val_pre = cab.predict(X_valid)
+        y_val_pre = (y_val_pre > 0.5).astype(int)
+        score = accuracy_score(y_valid, y_val_pre)
+
+        y_pred = cab.predict(X_test) if not X_test==None else None
 
         return score, y_val_pre, y_pred
