@@ -1,20 +1,36 @@
+from numpy.lib.function_base import average
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 import lightgbm as lgb
-
-from sklearn.model_selection import KFold
-
+from sklearn.model_selection import StratifiedKFold
 
 class Models:
     def __init__(self) -> None:
         pass
 
-    def KFold(self, X_train, y_train, X_test):
+    def KFold(self, X_train, y_train, X_test, categorical_features, model_name, n_splits=5):
 
+        scores = []
+        cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=0)
+        for fold_id, (train_index, valid_index) in enumerate(cv.split(X_train, y_train)):
+            X_tr = X_train.loc[train_index, :]
+            X_val = X_train.loc[valid_index, :]
+            y_tr = y_train[train_index]
+            y_val = y_train[valid_index]
 
-        return predict
+            if model_name == "random_forest":
+                score, _, _ = self.light_gbm(X_tr, y_tr, X_val, y_val)
+            elif model_name == "light_gbm":
+                score, _, _ = self.light_gbm(X_tr, y_tr, X_val, y_val, categorical_features)
+            else:
+                raise NameError("指定されたアルゴリズムは存在しません")
 
-    def random_forest(self, X_train, y_train, X_valid, y_valid, X_test=None, n_estimators=100, max_depth=2, random_state=0):
+            scores.append(score)
+
+        cv_score = sum(scores) / len(scores)
+        return cv_score
+
+    def random_forest(self, X_train, y_train, X_valid, y_valid, X_test=None, n_estimators=15, max_depth=6, random_state=0):
         """
         pandasでの教師データ
         パラメータ
@@ -31,7 +47,7 @@ class Models:
 
         return score, y_val_pre, y_pred
 
-    def light_gbm(self, X_train, y_train, X_valid, y_valid, categorical_features, X_test=None, params = {'objective': 'binary','max_bin': 300,'learning_rate': 0.05,'num_leaves': 40}):
+    def light_gbm(self, X_train, y_train, X_valid, y_valid, categorical_features, X_test=None, params = {'objective': 'binary','max_bin': 284,'learning_rate': 0.068,'num_leaves': 45}):
         """
         pandasでの教師データ
         categorical_features:カテゴリかる属性のカラム名を示したリスト

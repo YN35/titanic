@@ -1,3 +1,4 @@
+import lightgbm
 import numpy as np
 import pandas as pd
 from model import Models
@@ -5,7 +6,7 @@ from param_opt import Optimizer
 import random
 import os
 
-def seed_everything(seed=1234):
+def seed_everything(seed=0):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
@@ -44,3 +45,7 @@ op = Optimizer()
 
 #print(op.param_opt('light_gbm', X_train, y_train))
 #print(op.param_opt('random_forest', X_train, y_train))
+
+#K-foldでCVスコアを計算
+print("CV :"+str(md.KFold(X_train, y_train, X_test, categorical_features, "light_gbm"))+"-------------------------------------------------")
+
