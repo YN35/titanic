@@ -1,6 +1,15 @@
 import numpy as np
 import pandas as pd
 from model import Models
+from param_opt import Optimizer
+import random
+import os
+
+def seed_everything(seed=1234):
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+seed_everything
 
 train = pd.read_csv('input/titanic/train.csv')
 test = pd.read_csv('input/titanic/test.csv')
@@ -31,7 +40,7 @@ X_test = test.drop('Survived', axis=1)
 categorical_features = ['Embarked', 'Pclass', 'Sex']
 
 md = Models()
+op = Optimizer()
 
-opt_params = md.param_opt('light_gbm', X_train, y_train)
-
-print(opt_params)
+#print(op.param_opt('light_gbm', X_train, y_train))
+#print(op.param_opt('random_forest', X_train, y_train))
