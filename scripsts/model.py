@@ -7,6 +7,9 @@ from sklearn.model_selection import StratifiedKFold
 from catboost import Pool
 from catboost import CatBoostClassifier
 import numpy as np
+from util import Util
+
+ut = Util()
 
 class Models:
     def __init__(self) -> None:
@@ -44,7 +47,7 @@ class Models:
             y_preds.append(y_pred)
             
         y_sub = sum(y_preds) / len(y_preds)
-        y_sub = (y_sub > 0.5).astype(int)
+        y_sub = ut.data_conv(y_sub)
 
         oof_pre = oof_pre[np.argsort(valid_indexs)]
 
@@ -61,11 +64,11 @@ class Models:
         RandomForest.fit(X_train, y_train)
         
         y_val_pre = RandomForest.predict(X_valid)
-        y_val_pre = (y_val_pre > 0.5).astype(int)
+        y_val_pre = ut.data_conv(y_val_pre)
         score = accuracy_score(y_valid, y_val_pre)
 
         y_pred = RandomForest.predict(X_test) if not X_test is None else None
-        y_pred = (y_pred > 0.5).astype(int)
+        y_pred = ut.data_conv(y_pred)
 
         return score, y_val_pre, y_pred
 
@@ -83,11 +86,11 @@ class Models:
         li_gbm = lgb.train(params, lgb_train,valid_sets=[lgb_train, lgb_eval],verbose_eval=10,num_boost_round=1000,early_stopping_rounds=10)
 
         y_val_pre = li_gbm.predict(X_valid, num_iteration=li_gbm.best_iteration)
-        y_val_pre = (y_val_pre > 0.5).astype(int)
+        y_val_pre = ut.data_conv(y_val_pre)
         score = accuracy_score(y_valid, y_val_pre)
 
         y_pred = li_gbm.predict(X_test, num_iteration=li_gbm.best_iteration) if not X_test is None else None
-        y_pred = (y_pred > 0.5).astype(int)
+        y_pred = ut.data_conv(y_pred)
 
         return score, y_val_pre, y_pred
 
@@ -111,11 +114,11 @@ class Models:
                     )
 
         y_val_pre = model.predict(valid)
-        y_val_pre = (y_val_pre > 0.5).astype(int)
+        y_val_pre = ut.data_conv(y_val_pre)
         score = accuracy_score(y_valid, y_val_pre)
 
         y_pred = model.predict(test) if not X_test is None else None
-        y_pred = (y_pred > 0.5).astype(int)
+        y_pred = ut.data_conv(y_pred)
 
         return score, y_val_pre, y_pred
 
@@ -135,11 +138,11 @@ class Models:
         cab = model.fit(train, eval_set=eval)
         
         y_val_pre = cab.predict(X_valid)
-        y_val_pre = (y_val_pre > 0.5).astype(int)
+        y_val_pre = ut.data_conv(y_val_pre)
         score = accuracy_score(y_valid, y_val_pre)
 
         y_pred = cab.predict(X_test) if not X_test is None else None
-        y_pred = (y_pred > 0.5).astype(int)
+        y_pred = ut.data_conv(y_pred)
 
         return score, y_val_pre, y_pred
 
@@ -153,10 +156,10 @@ class Models:
         model.fit(X_train, y_train)
 
         y_val_pre = model.predict(X_valid)
-        y_val_pre = (y_val_pre > 0.5).astype(int)
+        y_val_pre = ut.data_conv(y_val_pre)
         score = accuracy_score(y_valid, y_val_pre)
 
         y_pred = model.predict(X_test) if not X_test is None else None
-        y_pred = (y_pred > 0.5).astype(int)
+        y_pred = ut.data_conv(y_pred)
 
         return score, y_val_pre, y_pred

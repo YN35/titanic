@@ -65,6 +65,7 @@ ens = Ensemble()
 cv_score, _, y_sub = ens.stacking(X_train, y_train, X_test, categorical_features, fst_lay=['random_forest', 'light_gbm', 'xgboost', 'catboost'], snd_lay='light_gbm')
 print('CV score-----------------------------------',cv_score)
 
+
 sub = pd.read_csv('input/titanic/gender_submission.csv')
 sub['Survived'] = y_sub
 sub.to_csv('submission.csv', index=False)

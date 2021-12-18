@@ -31,3 +31,4 @@ class Ensemble():
 
         return cv_score, oof_pre, y_sub
 
+#    def mean(self, X_train, y_train, X_test, categorical_features):
