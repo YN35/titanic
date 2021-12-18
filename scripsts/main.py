@@ -45,11 +45,13 @@ op = Optimizer()
 
 #print(op.param_opt('light_gbm', X_train, y_train))
 #print(op.param_opt('random_forest', X_train, y_train))
-#print(op.param_opt('catboost', X_train, y_train))
+#print(op.param_opt('xgboost', X_train, y_train))
 
 #K-foldでCVスコアを計算
-print("CV :"+str(md.KFold(X_train, y_train, X_test, categorical_features, "random_forest"))+"-------------------------------------------------")
+print("CV :"+str(md.KFold(X_train, y_train, X_test, categorical_features, "xgboost"))+"-------------------------------------------------")
 
 #random_forest 0.822635113928818
 #light_gbm 0.8293829640323895
 #catboost 0.8204004770573097
+#logistic_regression 0.6846023476241291
+#xgboost 0.8192643274119641

@@ -1,5 +1,7 @@
+import xgboost as xgb
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 import lightgbm as lgb
 from sklearn.model_selection import StratifiedKFold
 from catboost import Pool
@@ -24,8 +26,12 @@ class Models:
                 score, _, _ = self.random_forest(X_tr, y_tr, X_val, y_val)
             elif model_name == "light_gbm":
                 score, _, _ = self.light_gbm(X_tr, y_tr, X_val, y_val, categorical_features)
+            elif model_name == 'xgboost':
+                score, _, _ = self.xgboost(X_tr, y_tr, X_val, y_val)
             elif model_name == "catboost":
                 score, _, _ = self.catboost(X_tr, y_tr, X_val, y_val, categorical_features)
+            elif model_name == "logistic_regression":
+                score, _, _ = self.logistic_regression(X_tr, y_tr, X_val, y_val)
             else:
                 raise NameError("指定されたアルゴリズムは存在しません")
 
@@ -72,6 +78,33 @@ class Models:
 
         return score, y_val_pre, y_pred
 
+    def xgboost(self, X_train, y_train, X_valid, y_valid, X_test=None, params = {'objective': 'reg:squarederror','silent':1, 'random_state':0,'learning_rate': 0.15, 'eval_metric': 'rmse',}, num_round = 450):
+        """
+        pandasでの教師データ
+        categorical_features:カテゴリかる属性のカラム名を示したリスト
+        パラメータ
+        return valスコア(float), y_val_pre(valでの予測値), その取り出し方での予測値
+        """
+
+        train = xgb.DMatrix(X_train, label=y_train)
+        valid = xgb.DMatrix(X_valid, label=y_valid)
+        test = xgb.DMatrix(X_test)
+
+        model = xgb.train(params,
+                    train,#訓練データ
+                    num_round,#設定した学習回数
+                    early_stopping_rounds=20,
+                    evals=[(train, 'train'), (valid, 'eval')],
+                    )
+
+        y_val_pre = model.predict(valid)
+        y_val_pre = (y_val_pre > 0.5).astype(int)
+        score = accuracy_score(y_valid, y_val_pre)
+
+        y_pred = model.predict(test) if not X_test==None else None
+
+        return score, y_val_pre, y_pred
+
     def catboost(self, X_train, y_train, X_valid, y_valid, categorical_features, X_test=None, params ={'depth' : 3,'learning_rate' : 0.054,'early_stopping_rounds' : 9,'iterations' : 474, 'custom_loss' :['Accuracy'], 'random_seed' :0}):
         """
         pandasでの教師データ
@@ -92,5 +125,22 @@ class Models:
         score = accuracy_score(y_valid, y_val_pre)
 
         y_pred = cab.predict(X_test) if not X_test==None else None
+
+        return score, y_val_pre, y_pred
+
+    def logistic_regression(self, X_train, y_train, X_valid, y_valid, X_test=None):
+        """
+        pandasでの教師データ
+        パラメータ
+        return valスコア(float)、その取り出し方での予測値
+        """
+        model = LogisticRegression(penalty='l2', solver='sag', random_state=0)
+        model.fit(X_train, y_train)
+
+        y_val_pre = model.predict(X_valid)
+        y_val_pre = (y_val_pre > 0.5).astype(int)
+        score = accuracy_score(y_valid, y_val_pre)
+
+        y_pred = model.predict(X_test) if not X_test==None else None
 
         return score, y_val_pre, y_pred

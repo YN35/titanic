@@ -7,6 +7,7 @@ md = Models()
 
 #random_forest : {'n_estimators': 67, 'max_depth': 6}
 #light_gbm : {'max_bin': 284, 'learning_rate': 0.06759289191947715, 'num_leaves': 45}
+#xgboost : {'learning_rate': 0.180343853211702, 'num_round': 394}
 #catboost : {'depth': 3, 'learning_rate': 0.053925065258405916, 'early_stopping_rounds': 9, 'iterations': 474}
 class Optimizer():
     def __init__(self) -> None:
@@ -27,9 +28,15 @@ class Optimizer():
             study.optimize(self.objective_light_gbm(X_train, y_train, X_valid, y_valid, categorical_features), n_trials=80)
             return study.best_params
 
+        elif model_name == "xgboost":
+            study.optimize(self.objective_xgboost(X_train, y_train, X_valid, y_valid), n_trials=80)
+            return study.best_params
+
         elif model_name == "catboost":
             study.optimize(self.objective_catboost(X_train, y_train, X_valid, y_valid, categorical_features), n_trials=80)
             return study.best_params
+        elif model_name == 'logistic_regression':
+            raise NameError('logistic_regressionはパラメータが存在しないのでサポートしていません')
 
     def objective_random_forest(self, X_train, y_train, X_valid, y_valid):
         def objective(trial):
@@ -57,6 +64,22 @@ class Optimizer():
             return score
         return objective
 
+    def objective_xgboost(self, X_train, y_train, X_valid, y_valid):
+        def objective(trial):
+            params = {'objective': 'reg:squarederror',
+                    'silent':1, 
+                    'random_state':0,
+                    'learning_rate': trial.suggest_uniform('learning_rate', 0.01, 0.2), 
+                    'eval_metric': 'rmse',
+            }
+            num_round = trial.suggest_int('num_round', 100, 900)
+            _, y_val_pre, _ = md.xgboost(X_train, y_train, X_valid, y_valid, params=params, num_round=num_round)
+            
+            score = log_loss(y_valid, y_val_pre)
+
+            return score
+        return objective
+
     def objective_catboost(self, X_train, y_train, X_valid, y_valid, categorical_features):
         def objective(trial):
             params = {
@@ -73,3 +96,5 @@ class Optimizer():
 
             return score
         return objective
+
+    #LogisticRegressionはパラメータがない
