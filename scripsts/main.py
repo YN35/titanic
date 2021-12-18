@@ -63,6 +63,9 @@ op = Optimizer()
 
 ens = Ensemble()
 cv_score, _, y_sub = ens.stacking(X_train, y_train, X_test, categorical_features, fst_lay=['random_forest', 'light_gbm', 'xgboost', 'catboost'], snd_lay='light_gbm')
+#0.8293829640323895
+#cv_score, _, y_sub = ens.mean(X_train, y_train, X_test, categorical_features, models=['random_forest', 'light_gbm', 'xgboost', 'catboost'], type='mean')
+#mean:0.8237934904601572 hmean:0.819304152637486 gmean:0.819304152637486
 print('CV score-----------------------------------',cv_score)
 
 
