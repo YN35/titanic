@@ -13,7 +13,8 @@ class Ensemble():
     def __init__(self) -> None:
         pass
 
-    def stacking(self, X_train, y_train, X_test, categorical_features, fst_lay=['random_forest', 'light_gbm', 'xgboost', 'catboost'], snd_lay='light_gbm'):
+    def stacking(self, X_train, y_train, X_test, categorical_features, fst_lay=['random_forest', 'light_gbm', 'xgboost', 'catboost'], snd_lay='light_gbm', enable_2ndorigx=True):
+        #enable_2ndorigx:二層目にオリジナルの入力データを入力するか
 
         for index, model_name in enumerate(fst_lay):
 
@@ -26,11 +27,17 @@ class Ensemble():
                 stack_oof_pred = np.c_[stack_oof_pred, oof_pre]
                 stack_pred = np.c_[stack_pred, y_sub]
 
-        categorical_features = []
-        cv_score, oof_pre, y_sub = md.KFold(pd.DataFrame(stack_oof_pred), y_train, pd.DataFrame(stack_pred), categorical_features, snd_lay)
+        if enable_2ndorigx:
+            X_train2 =  pd.concat([pd.DataFrame(stack_oof_pred), X_train], axis=1)
+            X_test2 =  pd.concat([pd.DataFrame(stack_pred), X_test], axis=1)
+        else:
+            X_train2 = pd.DataFrame(stack_oof_pred)
+            X_test2 = pd.DataFrame(stack_pred)
+            categorical_features = []
+
+        cv_score, oof_pre, y_sub = md.KFold(X_train2, y_train, X_test2, categorical_features, snd_lay)
         
-        y_sub = sum(y_sub) / len(y_sub)
-        y_sub = (y_sub > 0.5).astype(int)
+        y_sub = ut.data_conv(y_sub)
 
         return cv_score, oof_pre, y_sub
 

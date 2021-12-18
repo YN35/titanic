@@ -8,6 +8,16 @@ from catboost import Pool
 from catboost import CatBoostClassifier
 import numpy as np
 from util import Util
+import tensorflow as tf
+import tensorflow.keras as keras
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.callbacks import EarlyStopping
+import pandas as pd
+
 
 ut = Util()
 
@@ -38,6 +48,8 @@ class Models:
                 score, y_val_pre, y_pred = self.catboost(X_tr, y_tr, categorical_features, X_valid=X_val, y_valid=y_val, X_test=X_test)
             elif model_name == "logistic_regression":
                 score, y_val_pre, y_pred = self.logistic_regression(X_tr, y_tr, X_val, y_val, X_test=X_test)
+            elif model_name == "dnn":
+                score, y_val_pre, y_pred = self.dnn(X_tr, y_tr, X_val, y_val, X_test=X_test)
             else:
                 raise NameError("指定されたアルゴリズムは存在しません")
 
@@ -154,6 +166,47 @@ class Models:
         """
         model = LogisticRegression(penalty='l2', solver='sag', random_state=0)
         model.fit(X_train, y_train)
+
+        y_val_pre = model.predict(X_valid)
+        y_val_pre = ut.data_conv(y_val_pre)
+        score = accuracy_score(y_valid, y_val_pre)
+
+        y_pred = model.predict(X_test) if not X_test is None else None
+        y_pred = ut.data_conv(y_pred)
+
+        return score, y_val_pre, y_pred
+
+    def dnn(self, X_train, y_train, X_valid=None, y_valid=None, X_test=None):
+
+        lr_schedule=tf.keras.optimizers.schedules.ExponentialDecay( \
+                    initial_learning_rate=0.001, #初期の学習率
+                    decay_steps=3000, #減衰ステップ数
+                    decay_rate=0.01, #最終的な減衰率 
+                    staircase=True)
+
+        model=Sequential()
+        model.add(Dense(len(X_train.columns),input_shape=(len(X_train.columns),),activation='relu',
+                    kernel_regularizer=keras.regularizers.l2(0.001), #重みの正則化考慮
+                    kernel_initializer='random_uniform',
+                    bias_initializer='zero'))
+                    
+        model.add(BatchNormalization()) #バッチ正規化
+        model.add(Dropout(0.1)) # ドロップアウト層・ドロップアウトさせる割合
+        model.add(Dense(int(len(pd.DataFrame(X_train).columns)/2),activation='sigmoid'))
+
+        model.add(BatchNormalization()) #バッチ正規化
+        model.add(Dropout(0.1)) # ドロップアウト層・ドロップアウトさせる割合
+        model.add(Dense(int(len(pd.DataFrame(X_train).columns)/2),activation='sigmoid'))
+
+        model.add(BatchNormalization()) #バッチ正規化
+        model.add(Dropout(0.1)) # ドロップアウト層・ドロップアウトさせる割合
+        model.add(Dense(len(pd.DataFrame(y_train).columns),activation='sigmoid'))
+        Ecall=EarlyStopping(monitor='val_loss',patience=1000,restore_best_weights=False)
+        model.compile(loss='binary_crossentropy', optimizer=Adam(learning_rate=lr_schedule))
+        model.summary()
+
+        res=model.fit(X_train.values,y_train.values,epochs=10000,callbacks=[Ecall],verbose=1,validation_data=(X_valid.values,y_valid.values))
+
 
         y_val_pre = model.predict(X_valid)
         y_val_pre = ut.data_conv(y_val_pre)

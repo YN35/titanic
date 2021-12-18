@@ -35,6 +35,7 @@ class Optimizer():
         elif model_name == "catboost":
             study.optimize(self.objective_catboost(X_train, y_train, X_valid, y_valid, categorical_features), n_trials=80)
             return study.best_params
+            
         elif model_name == 'logistic_regression':
             raise NameError('logistic_regressionはパラメータが存在しないのでサポートしていません')
 
