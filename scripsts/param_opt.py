@@ -57,7 +57,7 @@ class Optimizer():
             'learning_rate': trial.suggest_uniform('learning_rate', 0.01, 0.1),
             'num_leaves': trial.suggest_int('num_leaves', 32, 128),
             }
-            _, y_val_pre, _ = md.light_gbm(X_train, y_train, X_valid, y_valid, categorical_features, params=params)
+            _, y_val_pre, _ = md.light_gbm(X_train, y_train, categorical_features, X_valid=X_valid, y_valid=y_valid, params=params)
             
             score = log_loss(y_valid, y_val_pre)
 
@@ -73,7 +73,7 @@ class Optimizer():
                     'eval_metric': 'rmse',
             }
             num_round = trial.suggest_int('num_round', 100, 900)
-            _, y_val_pre, _ = md.xgboost(X_train, y_train, X_valid, y_valid, params=params, num_round=num_round)
+            _, y_val_pre, _ = md.xgboost(X_train, y_train, X_valid=X_valid, y_valid=y_valid, params=params, num_round=num_round)
             
             score = log_loss(y_valid, y_val_pre)
 
@@ -90,7 +90,7 @@ class Optimizer():
                 'custom_loss' :['Accuracy'], 
                 'random_seed' :0
             }
-            _, y_val_pre, _ = md.catboost(X_train, y_train, X_valid, y_valid, categorical_features, params=params)
+            _, y_val_pre, _ = md.catboost(X_train, y_train, categorical_features, X_valid=X_valid, y_valid=y_valid, params=params)
             
             score = log_loss(y_valid, y_val_pre)
 

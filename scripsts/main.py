@@ -2,6 +2,7 @@ import lightgbm
 import numpy as np
 import pandas as pd
 from model import Models
+from ensemble import Ensemble
 from param_opt import Optimizer
 import random
 import os
@@ -48,10 +49,22 @@ op = Optimizer()
 #print(op.param_opt('xgboost', X_train, y_train))
 
 #K-foldでCVスコアを計算
-print("CV :"+str(md.KFold(X_train, y_train, X_test, categorical_features, "xgboost"))+"-------------------------------------------------")
+#cv_score, y_val_pre, y_sub = md.KFold(X_train, y_train, X_test, categorical_features, "light_gbm")
+#print('CV score-----------------------------------',cv_score)
+#sub = pd.read_csv('input/titanic/gender_submission.csv')
+#sub['Survived'] = y_sub
+#sub.to_csv('submission.csv', index=False)
 
 #random_forest 0.822635113928818
 #light_gbm 0.8293829640323895
 #catboost 0.8204004770573097
 #logistic_regression 0.6846023476241291
 #xgboost 0.8192643274119641
+
+ens = Ensemble()
+cv_score, _, y_sub = ens.stacking(X_train, y_train, X_test, categorical_features, fst_lay=['random_forest', 'light_gbm', 'xgboost', 'catboost'], snd_lay='light_gbm')
+print('CV score-----------------------------------',cv_score)
+
+sub = pd.read_csv('input/titanic/gender_submission.csv')
+sub['Survived'] = y_sub
+sub.to_csv('submission.csv', index=False)
