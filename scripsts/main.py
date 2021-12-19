@@ -20,7 +20,7 @@ fe = Feature()
 
 data = pd.concat([train, test], sort=False)
 
-data = fe.conv_data(data)
+data = fe.conv_data(data, save_fet=True, save_name='feature')
 categorical_features = ['Embarked', 'Pclass', 'Sex']
 
 train = data[:len(train)]
@@ -74,5 +74,7 @@ def mean():
     sub.to_csv('submission.csv', index=False)
 
 
-
-stacking()
+KFold()
+#stacking()
+#docker update --cpuset-cpus 0-6 kaggle
+#docker container inspect --format='{{.HostConfig.CpusetCpus}}' kaggle

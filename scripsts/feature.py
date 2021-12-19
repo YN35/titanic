@@ -6,7 +6,7 @@ class Feature():
     def __init__(self) -> None:
         pass
 
-    def conv_data(self, data):
+    def conv_data(self, data, save_fet=False, save_name='feature'):
 
         data['Sex'].replace(['male', 'female'], [0, 1], inplace=True)
         data['Embarked'].fillna(('S'), inplace=True)
@@ -20,5 +20,8 @@ class Feature():
 
         delete_columns = ['Name', 'PassengerId', 'Ticket', 'Cabin']
         data.drop(delete_columns, axis=1, inplace=True)
+
+        if save_fet:
+            data.to_csv(save_name+'.csv', index=False)
 
         return data
