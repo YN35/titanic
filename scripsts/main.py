@@ -20,7 +20,7 @@ fe = Feature()
 
 data = pd.concat([train, test], sort=False)
 
-data = fe.conv_data(data, save_fet=True, save_name='feature')
+data = fe.conv_data(data, save_fet=False, save_name='feature')
 categorical_features = ['Embarked', 'Pclass', 'Sex']
 
 train = data[:len(train)]
