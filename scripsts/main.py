@@ -80,7 +80,7 @@ def mean():
     sub['Survived'] = y_sub
     sub.to_csv('submission.csv', index=False)
 
-
+#opt()
 #KFold_learn()
 #stacking_learn()
 stacking_predict()
