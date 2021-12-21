@@ -13,19 +13,21 @@ class Ensemble():
     def __init__(self) -> None:
         pass
 
-    def stacking(self, X_train, y_train, X_test, categorical_features, fst_lay=['random_forest', 'light_gbm', 'xgboost', 'catboost'], snd_lay='light_gbm', enable_2ndorigx=True):
+    def stacking(self, categorical_features, learn_type, X_train=None, y_train=None, X_test=None, fst_lay=['random_forest', 'light_gbm', 'xgboost', 'catboost'], snd_lay='light_gbm', enable_2ndorigx=True):
         #enable_2ndorigx:二層目にオリジナルの入力データを入力するか
 
+        stack_oof_pred = []
+        stack_pred = []
         for index, model_name in enumerate(fst_lay):
-
-            cv_score, oof_pre, y_sub = md.KFold(X_train, y_train, X_test, categorical_features, model_name)
-
-            if index == 0:
-                stack_oof_pred = oof_pre
-                stack_pred = y_sub
+            
+            if learn_type=='learn':
+                cv_score, oof_pre, y_sub = md.KFold(categorical_features, model_name, learn_type, fileID=0, X_train=X_train, y_train=y_train)
+                stack_oof_pred = oof_pre if index == 0 else np.c_[stack_oof_pred, oof_pre]
+            elif learn_type=='predict':
+                cv_score, oof_pre, y_sub = md.KFold(categorical_features, model_name, learn_type, fileID=0, X_test=X_test)
+                stack_pred = y_sub if index == 0 else np.c_[stack_pred, y_sub]
             else:
-                stack_oof_pred = np.c_[stack_oof_pred, oof_pre]
-                stack_pred = np.c_[stack_pred, y_sub]
+                raise NameError("指定されたlearn_typeは存在しません")
 
         if enable_2ndorigx:
             X_train2 =  pd.concat([pd.DataFrame(stack_oof_pred), X_train], axis=1)
@@ -35,13 +37,17 @@ class Ensemble():
             X_test2 = pd.DataFrame(stack_pred)
             categorical_features = []
 
-        cv_score, oof_pre, y_sub = md.KFold(X_train2, y_train, X_test2, categorical_features, snd_lay)
+        #二層目
+        if learn_type=='learn':
+            cv_score, oof_pre, y_sub = md.KFold(categorical_features, snd_lay, learn_type, fileID=1, X_train=X_train2, y_train=y_train)
+        elif learn_type=='predict':
+            cv_score, oof_pre, y_sub = md.select_model(categorical_features, snd_lay, learn_type, fileID=1, X_test=X_test2)
         
         y_sub = ut.data_conv(y_sub)
 
         return cv_score, oof_pre, y_sub
 
-    def mean(self, X_train, y_train, X_test, categorical_features, models=['random_forest', 'light_gbm', 'xgboost', 'catboost'], type='mean'):
+    def mean(self, categorical_features, learn_type, X_train=None, y_train=None, X_test=None, models=['random_forest', 'light_gbm', 'xgboost', 'catboost'], type='mean'):
         '''
         type:平均の取り方 
         mean -> 算術平均
@@ -49,15 +55,19 @@ class Ensemble():
         gmean -> 幾何平均
         '''
 
+        stack_oof_pred = []
+        stack_pred = []
         for index, model_name in enumerate(models):
-
-            cv_score, oof_pre, y_sub = md.KFold(X_train, y_train, X_test, categorical_features, model_name)
-            if index == 0:
-                stack_oof_pred = oof_pre
-                stack_pred = y_sub
+            if learn_type=='evalute':
+                cv_score, oof_pre, y_sub = md.KFold(categorical_features, model_name, X_train=X_train, y_train=y_train)
+                stack_oof_pred = oof_pre if index == 0 else np.c_[stack_oof_pred, oof_pre]
+            elif learn_type=='learn':
+                cv_score, oof_pre, y_sub = md.select_model(categorical_features, model_name, learn_type, fileID=0, X_train=X_train, y_train=y_train)
+            elif learn_type=='predict':
+                cv_score, oof_pre, y_sub = md.select_model(categorical_features, model_name, learn_type, fileID=0, X_test=X_test)
+                stack_pred = y_sub if index == 0 else np.c_[stack_pred, y_sub]
             else:
-                stack_oof_pred = np.c_[stack_oof_pred, oof_pre]
-                stack_pred = np.c_[stack_pred, y_sub]
+                raise NameError("指定されたlearn_typeは存在しません")
 
         if type == 'mean':
             y_off = np.average(stack_oof_pred, axis=1)

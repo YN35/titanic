@@ -1,4 +1,5 @@
 #*.csv
+*.pickle
 *.npy
 *.npz
 .h5
