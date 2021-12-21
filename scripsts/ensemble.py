@@ -41,9 +41,8 @@ class Ensemble():
         if learn_type=='learn':
             cv_score, oof_pre, y_sub = md.KFold(categorical_features, snd_lay, learn_type, fileID=1, X_train=X_train2, y_train=y_train)
         elif learn_type=='predict':
-            cv_score, oof_pre, y_sub = md.select_model(categorical_features, snd_lay, learn_type, fileID=1, X_test=X_test2)
-        
-        y_sub = ut.data_conv(y_sub)
+            cv_score, oof_pre, y_sub = md.KFold(categorical_features, snd_lay, learn_type, fileID=1, X_test=X_test2)
+            y_sub = ut.data_conv(y_sub)
 
         return cv_score, oof_pre, y_sub
 

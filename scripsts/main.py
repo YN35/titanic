@@ -60,7 +60,8 @@ def stacking_learn():
     cv_score, _, y_sub = ens.stacking(categorical_features, 'learn', X_train=X_train, y_train=y_train, fst_lay=['random_forest', 'light_gbm', 'xgboost', 'catboost'], snd_lay='light_gbm', enable_2ndorigx=False)
 
     print('CV score-----------------------------------',cv_score)
-    #0.8293829640323895
+    #0.8293829640323895 2ndlgtm
+    #0.8237712635741635 2ndrandomforest
 
 def stacking_predict():
     _, _, y_sub = ens.stacking(categorical_features, 'predict', X_test=X_test, fst_lay=['random_forest', 'light_gbm', 'xgboost', 'catboost'], snd_lay='light_gbm', enable_2ndorigx=False)
@@ -80,7 +81,8 @@ def mean():
     sub.to_csv('submission.csv', index=False)
 
 
-KFold_learn()
-#stacking()
+#KFold_learn()
+#stacking_learn()
+stacking_predict()
 #docker update --cpuset-cpus 0-6 kaggle
 #docker container inspect --format='{{.HostConfig.CpusetCpus}}' kaggle
