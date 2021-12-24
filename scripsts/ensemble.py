@@ -3,7 +3,6 @@ from model import Models
 import numpy as np
 import pandas as pd
 from util import Util
-from sklearn.metrics import accuracy_score
 
 md = Models()
 ut = Util()
@@ -13,7 +12,7 @@ class Ensemble():
     def __init__(self) -> None:
         pass
 
-    def stacking(self, categorical_features, learn_type, X_train=None, y_train=None, X_test=None, fst_lay=['random_forest', 'light_gbm', 'xgboost', 'catboost'], snd_lay='light_gbm', enable_2ndorigx=True):
+    def stacking(self, categorical_features, learn_type, fileID=0, X_train=None, y_train=None, X_test=None, fst_lay=['random_forest', 'light_gbm', 'xgboost', 'catboost'], snd_lay='light_gbm', enable_2ndorigx=True):
         #enable_2ndorigx:二層目にオリジナルの入力データを入力するか
 
         stack_oof_pred = []
@@ -21,10 +20,10 @@ class Ensemble():
         for index, model_name in enumerate(fst_lay):
             
             if learn_type=='learn':
-                cv_score, oof_pre, y_sub = md.KFold(categorical_features, model_name, learn_type, fileID=0, X_train=X_train, y_train=y_train)
+                cv_score, oof_pre, y_sub = md.KFold(categorical_features, model_name, learn_type, fileID=fileID+'0', X_train=X_train, y_train=y_train)
                 stack_oof_pred = oof_pre if index == 0 else np.c_[stack_oof_pred, oof_pre]
             elif learn_type=='predict':
-                cv_score, oof_pre, y_sub = md.KFold(categorical_features, model_name, learn_type, fileID=0, X_test=X_test)
+                cv_score, oof_pre, y_sub = md.KFold(categorical_features, model_name, learn_type, fileID=fileID+'0', X_test=X_test)
                 stack_pred = y_sub if index == 0 else np.c_[stack_pred, y_sub]
             else:
                 raise NameError("指定されたlearn_typeは存在しません")
@@ -39,14 +38,14 @@ class Ensemble():
 
         #二層目
         if learn_type=='learn':
-            cv_score, oof_pre, y_sub = md.KFold(categorical_features, snd_lay, learn_type, fileID=1, X_train=X_train2, y_train=y_train)
+            cv_score, oof_pre, y_sub = md.KFold(categorical_features, snd_lay, learn_type, fileID=fileID+'1', X_train=X_train2, y_train=y_train)
         elif learn_type=='predict':
-            cv_score, oof_pre, y_sub = md.KFold(categorical_features, snd_lay, learn_type, fileID=1, X_test=X_test2)
+            cv_score, oof_pre, y_sub = md.KFold(categorical_features, snd_lay, learn_type, fileID=fileID+'1', X_test=X_test2)
             y_sub = ut.data_conv(y_sub)
 
         return cv_score, oof_pre, y_sub
 
-    def mean(self, categorical_features, learn_type, X_train=None, y_train=None, X_test=None, models=['random_forest', 'light_gbm', 'xgboost', 'catboost'], type='mean'):
+    def mean(self, categorical_features, learn_type, fileID=0, X_train=None, y_train=None, X_test=None, models=['random_forest', 'light_gbm', 'xgboost', 'catboost'], type='mean'):
         '''
         type:平均の取り方 
         mean -> 算術平均
@@ -57,13 +56,11 @@ class Ensemble():
         stack_oof_pred = []
         stack_pred = []
         for index, model_name in enumerate(models):
-            if learn_type=='evalute':
-                cv_score, oof_pre, y_sub = md.KFold(categorical_features, model_name, X_train=X_train, y_train=y_train)
+            if learn_type=='learn':
+                cv_score, oof_pre, y_sub = md.KFold(categorical_features, model_name, learn_type, fileID=fileID+'0', X_train=X_train, y_train=y_train)
                 stack_oof_pred = oof_pre if index == 0 else np.c_[stack_oof_pred, oof_pre]
-            elif learn_type=='learn':
-                cv_score, oof_pre, y_sub = md.select_model(categorical_features, model_name, learn_type, fileID=0, X_train=X_train, y_train=y_train)
             elif learn_type=='predict':
-                cv_score, oof_pre, y_sub = md.select_model(categorical_features, model_name, learn_type, fileID=0, X_test=X_test)
+                cv_score, oof_pre, y_sub = md.KFold(categorical_features, model_name, learn_type, fileID=fileID+'0', X_test=X_test)
                 stack_pred = y_sub if index == 0 else np.c_[stack_pred, y_sub]
             else:
                 raise NameError("指定されたlearn_typeは存在しません")
@@ -83,6 +80,6 @@ class Ensemble():
         y_off = ut.data_conv(y_off)
         y_sub = ut.data_conv(y_sub)
 
-        cv_score = accuracy_score(y_train, y_off)
+        cv_score = ut.accuracy_score(y_train, y_off)
         
         return cv_score, oof_pre, y_sub
